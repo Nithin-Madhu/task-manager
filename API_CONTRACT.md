@@ -26,6 +26,15 @@ that are strings.
 
 ## Operations
 
+| Operation | Success | Errors |
+|---|---|---|
+| createTask(request, idempotencyKey) | 201, the task | 400 |
+| getTask(id) | 200, the task | 404 |
+| listTasks() | 200, `{"tasks":[...]}` | none yet (changes in Step 7) |
+| updateTask(id, request) | 200, the updated task | 404, 400 |
+| deleteTask(id) | 200, `{"deleted":true,"id":N}` | 404 |
+
+- `createdAt`, `id` and `parentId` can't be changed through a request; update keeps the original values.
 
 ## Open decisions
 

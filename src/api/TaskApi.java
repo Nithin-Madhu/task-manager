@@ -1,0 +1,67 @@
+package api;
+
+import exception.ApiException;
+import model.Task;
+import model.TaskRequest;
+import service.TaskService;
+
+public class TaskApi {
+    private final TaskService service;
+
+    public TaskApi(TaskService service) {
+        this.service = service;
+    }
+
+    public ApiResponse createTask(TaskRequest request, String idempotencyKey) {
+        try {
+            Task task = service.createTask(request);
+            return new ApiResponse(201, JsonUtil.toJson(task));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+
+    public ApiResponse getTask(int id) {
+        try {
+            return new ApiResponse(200, JsonUtil.toJson(service.getTask(id)));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+
+    // convert to listTasks(TaskQuery) later
+    public ApiResponse listTasks() {
+        try {
+            return new ApiResponse(200, JsonUtil.toJson(service.listAll()));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+
+    public ApiResponse updateTask(int id, TaskRequest request) {
+        try {
+            return new ApiResponse(200, JsonUtil.toJson(service.updateTask(id, request)));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+
+    public ApiResponse deleteTask(int id) {
+        try {
+            service.deleteTask(id);
+            return new ApiResponse(200, "{\"deleted\":true,\"id\":" + id + "}");
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+}

@@ -5,6 +5,8 @@ import model.Task;
 import model.TaskRequest;
 import repository.TaskRepository;
 
+import java.util.List;
+
 public class TaskService {
     private final TaskRepository repository;
 
@@ -36,5 +38,9 @@ public class TaskService {
     public void deleteTask(int id) {
         getTask(id);
         repository.delete(id);
+    }
+
+    public List<Task> listAll() {
+        return repository.findAll();
     }
 }
