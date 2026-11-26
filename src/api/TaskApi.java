@@ -64,4 +64,24 @@ public class TaskApi {
             return ErrorResponseFactory.internalError();
         }
     }
+
+    public ApiResponse createSubtask(int parentId, TaskRequest request) {
+        try {
+            return new ApiResponse(201, JsonUtil.toJson(service.createSubtask(parentId, request)));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+
+    public ApiResponse listSubtasks(int parentId) {
+        try {
+            return new ApiResponse(200, JsonUtil.toJson(service.listSubtasks(parentId)));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
 }

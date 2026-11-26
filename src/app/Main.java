@@ -24,6 +24,21 @@ public class Main {
         print("list", api.listTasks());
         print("delete 1", api.deleteTask(1));
         print("get 1 after delete", api.getTask(1));
+
+        // sub task creation
+        print("create parent", api.createTask(new TaskRequest("Plan trip", "Plan the trip", null, null, null), null));
+        print("create other", api.createTask(new TaskRequest("Buy milk", "Buy milk", null, null, null), null));
+        print("subtask of 2", api.createSubtask(2, new TaskRequest("Book flights", "Book flights", null, null, null)));
+        print("subtask of 2", api.createSubtask(2, new TaskRequest("Book hotel", "Book hotel", null, null, null)));
+        print("subtask of subtask 4", api.createSubtask(4, new TaskRequest("x", "y", null, null, null)));
+        print("subtask of 99", api.createSubtask(99, new TaskRequest("x", "y", null, null, null)));
+        print("invalid subtask", api.createSubtask(2, new TaskRequest("", "", null, null, null)));
+        print("list subtasks of 2", api.listSubtasks(2));
+        print("list subtasks of 99", api.listSubtasks(99));
+        print("BEFORE delete", api.listTasks());
+        print("delete 2", api.deleteTask(2));
+        print("AFTER delete", api.listTasks());
+        print("get 4", api.getTask(4));
     }
 
     private static void print(String label, ApiResponse r) {

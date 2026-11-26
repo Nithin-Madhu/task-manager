@@ -34,6 +34,8 @@ that are strings.
 | updateTask(id, request) | 200, the updated task | 404, 400 |
 | deleteTask(id) | 200, `{"deleted":true,"id":N}` | 404 |
 
+| createSubtask(parentId, request) | 201, the subtask | 404 unknown parent, 400 parent is a subtask or invalid input |
+| listSubtasks(parentId) | 200, `{"tasks":[...]}` | 404 unknown parent |
 - `createdAt`, `id` and `parentId` can't be changed through a request; update keeps the original values.
 
 ## Open decisions
@@ -50,3 +52,7 @@ otherwise must be a real YYYY-MM-DD date.
 An empty string is invalid.
 
 - `updateTask`: an unknown ID returns 404 before input is validated.
+
+- A subtask cannot have subtasks: createSubtask on a subtask returns 400 (VALIDATION_ERROR, field `parentId`).
+- Checks run in this order for createSubtask: parent exists (404), parent is top-level (400), request valid (400).
+- listSubtasks on an unknown ID returns 404, not an empty list.
