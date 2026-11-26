@@ -2,6 +2,7 @@ package api;
 
 import exception.ApiException;
 import model.Task;
+import model.TaskQuery;
 import model.TaskRequest;
 import service.TaskService;
 
@@ -49,10 +50,19 @@ public class TaskApi {
         }
     }
 
-    // convert to listTasks(TaskQuery) later
-    public ApiResponse listTasks() {
+    public ApiResponse listTasks(TaskQuery query) {
         try {
-            return new ApiResponse(200, JsonUtil.toJson(service.listAll()));
+            return new ApiResponse(200, JsonUtil.toJson(service.listTasks(query)));
+        } catch (ApiException e) {
+            return ErrorResponseFactory.from(e);
+        } catch (Exception e) {
+            return ErrorResponseFactory.internalError();
+        }
+    }
+
+    public ApiResponse listByPriority(String level) {
+        try {
+            return new ApiResponse(200, JsonUtil.toJson(service.listByPriority(level)));
         } catch (ApiException e) {
             return ErrorResponseFactory.from(e);
         } catch (Exception e) {

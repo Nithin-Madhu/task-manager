@@ -30,7 +30,8 @@ that are strings.
 |---|---|---|
 | createTask(request, idempotencyKey) | 201, the task | 400 |
 | getTask(id) | 200, the task | 404 |
-| listTasks() | 200, `{"tasks":[...]}` | none yet (changes in Step 7) |
+| listTasks(query) | 200, `{"tasks":[...],"page":N,"pageSize":N,"total":N,"totalPages":N}` | 400 invalid query |
+| listByPriority(level) | 200, `{"tasks":[...]}` (not paged) | 400 invalid level |
 | updateTask(id, request) | 200, the updated task | 404, 400 |
 | deleteTask(id) | 200, `{"deleted":true,"id":N}` | 404 |
 
@@ -65,3 +66,15 @@ An empty string is invalid.
 - Same key, different request: 422 CONFLICT.
 - Only successful (2xx) responses are remembered, so a failed request can be corrected and retried with the same key.
 - A key is tied to one operation; reusing it on a different operation is also 422.
+
+## Query rules (listTasks)
+
+All fields are optional. Defaults: page 1, pageSize 10, no sorting (creation order).
+- `completed`: true returns only completed tasks, false only open ones.
+- `priority`: LOW, MEDIUM, or HIGH (case-sensitive).
+- `search`: case-insensitive match on title or description; blank is ignored.
+- `sortBy`: createdAt or dueDate. `order`: "asc" (default) or "desc". Ties break by id in the same direction.
+- Tasks with no dueDate sort last in both directions.
+- `page` and `pageSize` must be 1 or greater. A page past the last returns 200 with an empty list.
+- Results include subtasks.
+- Invalid values return 400 and every problem is listed in `details`.

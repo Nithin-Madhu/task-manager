@@ -1,5 +1,6 @@
 package api;
 
+import model.PageResult;
 import model.Task;
 
 import java.util.List;
@@ -35,5 +36,18 @@ final class JsonUtil {
             sb.append(toJson(tasks.get(i)));
         }
         return sb.append("]}").toString();
+    }
+
+    static String toJson(PageResult p) {
+        StringBuilder sb = new StringBuilder("{\"tasks\":[");
+        for (int i = 0; i < p.getTasks().size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append(toJson(p.getTasks().get(i)));
+        }
+        return sb.append("],\"page\":").append(p.getPage())
+                .append(",\"pageSize\":").append(p.getPageSize())
+                .append(",\"total\":").append(p.getTotal())
+                .append(",\"totalPages\":").append(p.getTotalPages())
+                .append("}").toString();
     }
 }
