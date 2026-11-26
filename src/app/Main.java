@@ -13,7 +13,8 @@ public class Main {
 
         System.out.println("Task Manager started");
 
-        TaskApi api = new TaskApi(new TaskService(InMemoryTaskRepository.getInstance()));
+        TaskService service = new TaskService(InMemoryTaskRepository.getInstance());
+        TaskApi api = new TaskApi(service);
 
         print("create valid", api.createTask(new TaskRequest("Pay rent", "Monthly rent", null, "2026-12-01", "HIGH"), null));
         print("create invalid", api.createTask(new TaskRequest("", "", "yes", "2026-02-30", "URGENT"), null));
@@ -61,6 +62,25 @@ public class Main {
                 .priority("URGENT").sortBy("title").order("up").page(0).pageSize(-1).build()));
         printIds("listByPriority HIGH", api.listByPriority("HIGH"));
         print("listByPriority urgent", api.listByPriority("urgent"));
+
+
+
+        event.ConsoleLogListener console = new event.ConsoleLogListener();
+        event.AuditTrailListener audit = new event.AuditTrailListener();
+        service.addListener(console);
+        service.addListener(audit);
+
+        ApiResponse created = api.createTask(new TaskRequest("Event demo", "Event demo", null, null, null), null);
+        print("event: create", created);
+        int id = idOf(created);
+        print("event: complete", api.updateTask(id, new TaskRequest("Event demo", "Event demo", "true", null, null)));
+        print("event: delete", api.deleteTask(id));
+        System.out.println("audit counts: " + audit.getCounts());
+
+        service.removeListener(console);
+        ApiResponse again = api.createTask(new TaskRequest("After removal", "After removal", null, null, null), null);
+        print("event: create after removing console", again);
+        System.out.println("audit counts: " + audit.getCounts());
     }
 
     private static void print(String label, ApiResponse r) {
@@ -76,5 +96,10 @@ public class Main {
         int cut = body.indexOf("\"page\":");
         System.out.println(label + " -> 200, ids [" + ids.toString().trim() + "] "
                 + (cut >= 0 ? body.substring(cut) : ""));
+    }
+
+    private static int idOf(ApiResponse r) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"id\":(\\d+)").matcher(r.getBody());
+        return m.find() ? Integer.parseInt(m.group(1)) : -1;
     }
 }

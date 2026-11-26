@@ -1,5 +1,7 @@
 package service;
 
+import event.TaskEventListener;
+import event.TaskEventType;
 import exception.FieldIssue;
 import exception.NotFoundException;
 import exception.ValidationException;
@@ -8,6 +10,7 @@ import repository.TaskRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TaskService {
     private final TaskRepository repository;
@@ -16,9 +19,30 @@ public class TaskService {
         this.repository = repository;
     }
 
+    private final List<TaskEventListener> listeners = new CopyOnWriteArrayList<>();
+
+    public void addListener(TaskEventListener listener) {
+        if (listener != null && !listeners.contains(listener)) listeners.add(listener);
+    }
+
+    public void removeListener(TaskEventListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void publish(String eventType, Task task) {
+        for (TaskEventListener l : listeners) {
+            try {
+                l.onEvent(eventType, task);
+            } catch (RuntimeException e) {
+                System.err.println("Listener failed: " + e.getMessage());
+            }
+        }
+    }
+
     public Task createTask(TaskRequest request) {
-        Task task = TaskValidator.validate(request);
-        return repository.save(task);
+        Task saved = repository.save(TaskValidator.validate(request));
+        publish(TaskEventType.CREATED, saved);
+        return saved;
     }
 
     public Task getTask(int id) {
@@ -27,21 +51,27 @@ public class TaskService {
     }
 
     public Task updateTask(int id, TaskRequest request) {
-        Task existing = getTask(id);                       // 404 first
-        Task validated = TaskValidator.validate(request);  // then 400
-        Task updated = validated.toBuilder()
+        Task existing = getTask(id);
+        Task validated = TaskValidator.validate(request);
+        Task saved = repository.save(validated.toBuilder()
                 .id(existing.getId())
                 .createdAt(existing.getCreatedAt())
                 .parentId(existing.getParentId())
-                .build();
-        return repository.save(updated);
+                .build());
+        publish(TaskEventType.UPDATED, saved);
+        if (!existing.isCompleted() && saved.isCompleted()) {
+            publish(TaskEventType.COMPLETED, saved);
+        }
+        return saved;
     }
 
     public Task createSubtask(int parentId, TaskRequest request) {
         Task parent = getTask(parentId);
         requireCanHaveSubtasks(parent);
         Task validated = TaskValidator.validate(request);
-        return repository.save(validated.toBuilder().parentId(parentId).build());
+        Task saved = repository.save(validated.toBuilder().parentId(parentId).build());
+        publish(TaskEventType.CREATED, saved);
+        return saved;
     }
 
     public List<Task> listSubtasks(int parentId) {
@@ -64,11 +94,13 @@ public class TaskService {
     }
 
     public void deleteTask(int id) {
-        getTask(id);
+        Task existing = getTask(id);
         for (Task sub : listSubtasks(id)) {
             repository.delete(sub.getId());
+            publish(TaskEventType.DELETED, sub);
         }
         repository.delete(id);
+        publish(TaskEventType.DELETED, existing);
     }
 
     public PageResult listTasks(TaskQuery query) {
