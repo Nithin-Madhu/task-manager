@@ -40,9 +40,16 @@ public class Main {
         print("AFTER delete", api.listTasks());
         print("get 4", api.getTask(4));
 
+        parser.BreakdownStrategy bs = new parser.RuleBasedBreakdownStrategy();
+        for (String d : new String[]{"Book flights, book hotel and pack bags", "Plan the trip", " , "}) {
+            model.Task t = new model.Task.Builder("T", d, false).build();
+            System.out.println("[" + d + "] -> " + bs.breakDown(t).size() + " item(s)");
+            for (model.TaskRequest r : bs.breakDown(t)) System.out.println("   " + r.getTitle());
+        }
     }
 
     private static void print(String label, ApiResponse r) {
         System.out.println(label + " -> " + r);
     }
+
 }
