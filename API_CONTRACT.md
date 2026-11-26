@@ -24,3 +24,11 @@ that are strings.
 | 502 | BAD_GATEWAY | LLM call failed or returned invalid output |
 | 503 | SERVICE_UNAVAILABLE | LLM_API_KEY missing |
 
+## Operations
+
+
+## Open decisions
+
+- `completed`: if null it becomes "false". 
+If added, must be "true" or "false";
+anything else returns 400.
