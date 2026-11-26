@@ -34,7 +34,8 @@ that are strings.
 | listByPriority(level) | 200, `{"tasks":[...]}` (not paged) | 400 invalid level |
 | updateTask(id, request) | 200, the updated task | 404, 400 |
 | deleteTask(id) | 200, `{"deleted":true,"id":N}` | 404 |
-
+| createTaskFromText(text, idempotencyKey) | 201, the task | 400 blank text, 422 key reused with different text, 502 parser failed or produced invalid output, 503 LLM key missing (LLM mode only) |
+| breakDownTask(id, idempotencyKey) | 201, `{"tasks":[...]}` the new subtasks | 404 unknown id, 400 task is a subtask, 422 key conflict, 502 breakdown failed or any item invalid (nothing saved) |
 | createSubtask(parentId, request) | 201, the subtask | 404 unknown parent, 400 parent is a subtask or invalid input |
 | listSubtasks(parentId) | 200, `{"tasks":[...]}` | 404 unknown parent |
 - `createdAt`, `id` and `parentId` can't be changed through a request; update keeps the original values.
@@ -47,7 +48,7 @@ anything else returns 400.
 
 - `priority`: when null defaults to MEDIUM; 
 otherwise would LOW, MEDIUM, or HIGH.
-- 
+
 - `dueDate`: null means no due date; 
 otherwise must be a real YYYY-MM-DD date. 
 An empty string is invalid.
@@ -58,6 +59,12 @@ An empty string is invalid.
 - Checks run in this order for createSubtask: parent exists (404), parent is top-level (400), request valid (400).
 - listSubtasks on an unknown ID returns 404, not an empty list.
 
+- createTaskFromText: parser output is validated with the same rules as createTask. Any failure is 502 and nothing is saved. "today" is the server date.
+- A recurrence found by the parser is appended to the description as "(repeats monthly)"; tasks have no recurrence field.
+- breakDownTask validates every item before saving any. Calling it again with a different key creates more subtasks.
+
+- createTaskFromText and breakDownTask return 503 (SERVICE_UNAVAILABLE) when LLM mode is selected and LLM_API_KEY is missing. Offline mode uses the rule-based classes instead.
+- LLM output of the wrong type (for example a numeric title) returns 502, and nothing is saved.
 
 ## Idempotency
 

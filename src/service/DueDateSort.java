@@ -16,12 +16,11 @@ public class DueDateSort implements SortStrategy {
         copy.sort((a, b) -> {
             String x = a.getDueDate();
             String y = b.getDueDate();
-            int compare = Integer.compare(a.getId(), b.getId());
-            if (x == null && y == null) return compare;
+            if (x == null && y == null) return Integer.compare(a.getId(), b.getId());
             if (x == null) return 1;      // no due date always goes last
             if (y == null) return -1;
             int c = x.compareTo(y);       // YYYY-MM-DD sorts correctly as text
-            if (c == 0) c = compare;
+            if (c == 0) c = Integer.compare(a.getId(), b.getId());
             return ascending ? c : -c;
         });
         return copy;

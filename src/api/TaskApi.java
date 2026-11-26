@@ -110,4 +110,30 @@ public class TaskApi {
             return ErrorResponseFactory.internalError();
         }
     }
+
+    public ApiResponse createTaskFromText(String text, String idempotencyKey) {
+        String fingerprint = "createTaskFromText\u001F" + (text == null ? "\u0000" : text);
+        return IdempotencyStore.getInstance().execute(idempotencyKey, fingerprint, () -> {
+            try {
+                return new ApiResponse(201, JsonUtil.toJson(service.createTaskFromText(text)));
+            } catch (ApiException e) {
+                return ErrorResponseFactory.from(e);
+            } catch (Exception e) {
+                return ErrorResponseFactory.internalError();
+            }
+        });
+    }
+
+    public ApiResponse breakDownTask(int id, String idempotencyKey) {
+        String fingerprint = "breakDownTask\u001F" + id;
+        return IdempotencyStore.getInstance().execute(idempotencyKey, fingerprint, () -> {
+            try {
+                return new ApiResponse(201, JsonUtil.toJson(service.breakDownTask(id)));
+            } catch (ApiException e) {
+                return ErrorResponseFactory.from(e);
+            } catch (Exception e) {
+                return ErrorResponseFactory.internalError();
+            }
+        });
+    }
 }

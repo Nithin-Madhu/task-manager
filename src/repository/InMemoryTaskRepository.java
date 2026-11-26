@@ -42,4 +42,9 @@ public class InMemoryTaskRepository implements TaskRepository {
     public synchronized boolean delete(int id) {
         return tasks.remove(id) != null;
     }
+
+    public synchronized void reset() {
+        tasks.clear();
+        nextId = 1;
+    }
 }

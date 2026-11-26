@@ -2,12 +2,12 @@ package service;
 
 import event.TaskEventListener;
 import event.TaskEventType;
-import exception.FieldIssue;
-import exception.NotFoundException;
-import exception.ValidationException;
+import exception.*;
 import model.*;
+import parser.*;
 import repository.TaskRepository;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -15,10 +15,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class TaskService {
     private final TaskRepository repository;
 
+    private final TaskParser parser;
+    private final BreakdownStrategy breakdown;
+
     public TaskService(TaskRepository repository) {
-        this.repository = repository;
+        this(repository, new RuleBasedTaskParser(), new RuleBasedBreakdownStrategy());
     }
 
+    public TaskService(TaskRepository repository, TaskParser parser, BreakdownStrategy breakdown) {
+        this.repository = repository;
+        this.parser = parser;
+        this.breakdown = breakdown;
+    }
     private final List<TaskEventListener> listeners = new CopyOnWriteArrayList<>();
 
     public void addListener(TaskEventListener listener) {
@@ -138,5 +146,91 @@ public class TaskService {
             if (t.getPriority() == wanted) result.add(t);
         }
         return result;
+    }
+
+    public Task createTaskFromText(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            throw new ValidationException(List.of(new FieldIssue("text", "must not be empty")));
+        }
+        ParsedTask parsed;
+        try {
+            parsed = parser.parse(text, LocalDate.now().toString());
+        } catch (ApiException e) {
+            throw e;                                   // keep 503 etc. as they are
+        } catch (RuntimeException e) {
+            throw new BadGatewayException("Task parser failed: " + reason(e));
+        }
+        if (parsed == null) {
+            throw new BadGatewayException("Task parser returned nothing");
+        }
+
+        String description = parsed.getDescription();
+        String recurrence = parsed.getRecurrence();
+        if (description != null && recurrence != null && !recurrence.trim().isEmpty()) {
+            description = description + " (repeats " + recurrence.trim() + ")";
+        }
+
+        Task task;
+        try {
+            task = TaskValidator.validate(new TaskRequest(
+                    parsed.getTitle(), description, "false", parsed.getDueDate(), null));
+        } catch (ValidationException e) {
+            throw new BadGatewayException("Parser output was invalid: " + describe(e));
+        }
+        Task saved = repository.save(task);
+        publish(TaskEventType.CREATED, saved);
+        return saved;
+    }
+
+    public List<Task> breakDownTask(int id) {
+        Task parent = getTask(id);                     // 404
+        requireCanHaveSubtasks(parent);                // 400
+
+        List<TaskRequest> items;
+        try {
+            items = breakdown.breakDown(parent);
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new BadGatewayException("Breakdown failed: " + reason(e));
+        }
+        if (items == null || items.isEmpty()) {
+            throw new BadGatewayException("Breakdown returned no subtasks");
+        }
+
+        List<Task> validated = new ArrayList<>();
+        StringBuilder problems = new StringBuilder();
+        for (int i = 0; i < items.size(); i++) {
+            try {
+                validated.add(TaskValidator.validate(items.get(i)));
+            } catch (ValidationException e) {
+                if (problems.length() > 0) problems.append(" | ");
+                problems.append("item ").append(i + 1).append(": ").append(describe(e));
+            }
+        }
+        if (problems.length() > 0) {
+            throw new BadGatewayException("Breakdown output was invalid: " + problems);
+        }
+
+        List<Task> saved = new ArrayList<>();
+        for (Task t : validated) {
+            Task s = repository.save(t.toBuilder().parentId(id).build());
+            saved.add(s);
+            publish(TaskEventType.CREATED, s);
+        }
+        return saved;
+    }
+
+    private static String describe(ValidationException e) {
+        StringBuilder sb = new StringBuilder();
+        for (FieldIssue i : e.getIssues()) {
+            if (sb.length() > 0) sb.append("; ");
+            sb.append(i.getField()).append(" ").append(i.getIssue());
+        }
+        return sb.toString();
+    }
+
+    private static String reason(RuntimeException e) {
+        return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
     }
 }
