@@ -40,12 +40,13 @@ public class Main {
         print("AFTER delete", api.listTasks());
         print("get 4", api.getTask(4));
 
-        parser.BreakdownStrategy bs = new parser.RuleBasedBreakdownStrategy();
-        for (String d : new String[]{"Book flights, book hotel and pack bags", "Plan the trip", " , "}) {
-            model.Task t = new model.Task.Builder("T", d, false).build();
-            System.out.println("[" + d + "] -> " + bs.breakDown(t).size() + " item(s)");
-            for (model.TaskRequest r : bs.breakDown(t)) System.out.println("   " + r.getTitle());
-        }
+        TaskRequest rent = new TaskRequest("Pay rent", "Monthly rent", null, null, null);
+        print("idem first", api.createTask(rent, "key-1"));
+        print("idem retry", api.createTask(rent, "key-1"));
+        print("idem different request", api.createTask(new TaskRequest("Other", "Other", null, null, null), "key-1"));
+        print("idem invalid", api.createTask(new TaskRequest("", "", null, null, null), "key-2"));
+        print("idem fixed, same key", api.createTask(rent, "key-2"));
+        print("idem list", api.listTasks());
     }
 
     private static void print(String label, ApiResponse r) {

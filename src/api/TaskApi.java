@@ -13,14 +13,30 @@ public class TaskApi {
     }
 
     public ApiResponse createTask(TaskRequest request, String idempotencyKey) {
+        String fingerprint = fingerprint("createTask", request);
+        return IdempotencyStore.getInstance().execute(idempotencyKey, fingerprint,
+                () -> doCreateTask(request));
+    }
+
+    private ApiResponse doCreateTask(TaskRequest request) {
         try {
-            Task task = service.createTask(request);
-            return new ApiResponse(201, JsonUtil.toJson(task));
+            return new ApiResponse(201, JsonUtil.toJson(service.createTask(request)));
         } catch (ApiException e) {
             return ErrorResponseFactory.from(e);
         } catch (Exception e) {
             return ErrorResponseFactory.internalError();
         }
+    }
+
+    private static String fingerprint(String operation, TaskRequest r) {
+        if (r == null) return operation + "\u001F<null request>";
+        return String.join("\u001F", operation,
+                nz(r.getTitle()), nz(r.getDescription()), nz(r.getCompleted()),
+                nz(r.getDueDate()), nz(r.getPriority()));
+    }
+
+    private static String nz(String s) {
+        return s == null ? "\u0000" : s;
     }
 
     public ApiResponse getTask(int id) {

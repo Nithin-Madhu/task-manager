@@ -56,3 +56,12 @@ An empty string is invalid.
 - A subtask cannot have subtasks: createSubtask on a subtask returns 400 (VALIDATION_ERROR, field `parentId`).
 - Checks run in this order for createSubtask: parent exists (404), parent is top-level (400), request valid (400).
 - listSubtasks on an unknown ID returns 404, not an empty list.
+
+
+## Idempotency
+
+`createTask` accepts an optional `idempotencyKey` (null or blank = no idempotency).
+- Same key, same request: the original response is returned and nothing new is created.
+- Same key, different request: 422 CONFLICT.
+- Only successful (2xx) responses are remembered, so a failed request can be corrected and retried with the same key.
+- A key is tied to one operation; reusing it on a different operation is also 422.
