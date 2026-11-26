@@ -32,3 +32,12 @@ that are strings.
 - `completed`: if null it becomes "false". 
 If added, must be "true" or "false";
 anything else returns 400.
+
+- `priority`: when null defaults to MEDIUM; 
+otherwise would LOW, MEDIUM, or HIGH.
+- 
+- `dueDate`: null means no due date; 
+otherwise must be a real YYYY-MM-DD date. 
+An empty string is invalid.
+
+- `updateTask`: an unknown ID returns 404 before input is validated.
