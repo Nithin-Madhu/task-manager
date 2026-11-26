@@ -13,7 +13,7 @@ public class FaultyLlmClient implements LlmClient {
     public static final String BREAKDOWN_EMPTY_TITLE = "Book flights|Find a flight\n|Missing title";
     public static final String BREAKDOWN_NO_PIPE = "Book flights|Find a flight\nBook hotel without a separator";
 
-    private final String reply;   // null means "throw"
+    private final String reply;
     private int calls;
 
     public FaultyLlmClient(String reply) { this.reply = reply; }

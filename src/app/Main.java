@@ -219,8 +219,8 @@ public class Main {
     }
 
     private static void printIds(String label, ApiResponse r) {
-        if (r.getStatus() != 200) { print(label, r); return; }
-        String body = r.getBody();
+        if (r.status() != 200) { print(label, r); return; }
+        String body = r.body();
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"id\":(\\d+)").matcher(body);
         StringBuilder ids = new StringBuilder();
         while (m.find()) ids.append(m.group(1)).append(' ');
@@ -239,13 +239,15 @@ public class Main {
     }
 
     private static int idOf(ApiResponse r) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"id\":(\\d+)").matcher(r.getBody());
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"id\":(\\d+)").matcher(r.body());
         return m.find() ? Integer.parseInt(m.group(1)) : -1;
     }
 
     private static int total(TaskApi api) {
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"total\":(\\d+)")
-                .matcher(api.listTasks(null).getBody());
+                .matcher(api.listTasks(null).body());
         return m.find() ? Integer.parseInt(m.group(1)) : -1;
     }
+
+
 }

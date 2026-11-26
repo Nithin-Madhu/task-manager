@@ -38,7 +38,7 @@ public class IdempotencyStore {
                     new ConflictException("Idempotency key was already used with a different request"));
         }
         ApiResponse response = action.get();
-        if (response.getStatus() >= 200 && response.getStatus() < 300) {
+        if (response.status() >= 200 && response.status() < 300) {
             records.put(key, new Record(fingerprint, response));
         }
         return response;
