@@ -39,6 +39,7 @@ public class Main {
         print("delete 2", api.deleteTask(2));
         print("AFTER delete", api.listTasks());
         print("get 4", api.getTask(4));
+
     }
 
     private static void print(String label, ApiResponse r) {
